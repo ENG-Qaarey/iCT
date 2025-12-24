@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Camera, Mail, Phone, MapPin, Calendar, Edit2, Save } from "lucide-react";
+import { Mail, Phone, MapPin, Calendar, Edit2, Save } from "lucide-react";
 import { IctAvatar } from "@/components/ui/IctAvatar";
 import { IctButton } from "@/components/ui/IctButton";
 import { IctInput } from "@/components/ui/IctInput";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/hooks/use-user";
 
 interface UserProfile {
   name: string;
@@ -13,31 +14,62 @@ interface UserProfile {
   location: string;
   bio: string;
   joinDate: string;
+  avatar?: string;
 }
 
 export default function Profile() {
   const { toast } = useToast();
+  const { user, updateUser } = useUser();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   const [profile, setProfile] = useState<UserProfile>({
-    name: "Sarah Johnson",
-    email: "sarah@example.com",
+    name: user?.name || "Sarah Johnson",
+    email: user?.email || "sarah@example.com",
     phone: "+1 (555) 123-4567",
     location: "San Francisco, CA",
     bio: "Passionate about technology and empowering others. Currently learning web development and data science. Love building projects that make a difference!",
     joinDate: "January 2024",
+    avatar: user?.avatar,
   });
+
+  useEffect(() => {
+    setProfile((prev) => ({
+      ...prev,
+      name: user?.name ?? prev.name,
+      email: user?.email ?? prev.email,
+      avatar: user?.avatar ?? prev.avatar,
+    }));
+  }, [user]);
 
   const handleSave = async () => {
     setIsSaving(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
     setIsSaving(false);
     setIsEditing(false);
+    updateUser({ name: profile.name.trim(), email: profile.email.trim(), avatar: profile.avatar });
     toast({
       title: "Profile updated!",
       description: "Your changes have been saved successfully.",
     });
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setProfile((prev) => ({ ...prev, avatar: reader.result as string }));
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleChange = (field: keyof UserProfile) => (
@@ -96,11 +128,19 @@ export default function Profile() {
         transition={{ duration: 0.5, delay: 0.1 }}
         className="bg-card rounded-3xl shadow-card border border-border/50 p-8"
       >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAvatarChange}
+        />
         <div className="flex flex-col md:flex-row items-center gap-6 mb-8">
           <IctAvatar
             size="xl"
+            src={profile.avatar}
             editable={isEditing}
-            onEdit={() => console.log("Upload new photo")}
+            onEdit={handleAvatarClick}
           />
           <div className="text-center md:text-left flex-1">
             {isEditing ? (

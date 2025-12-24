@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Bell, Lock, Eye, Globe, Palette, HelpCircle, LogOut, ChevronRight, Shield } from "lucide-react";
+import { Bell, Lock, Eye, Globe, Palette, HelpCircle, LogOut, ChevronRight, Shield, Sun, Moon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/hooks/use-theme";
 
 interface SettingItem {
   icon: React.ElementType;
   title: string;
   description: string;
-  action?: "toggle" | "link" | "danger";
+  action?: "toggle" | "link" | "danger" | "theme";
   enabled?: boolean;
 }
 
@@ -32,8 +33,8 @@ const settingsSections = [
       {
         icon: Palette,
         title: "Appearance",
-        description: "Light mode",
-        action: "link" as const,
+        description: "Light / Dark",
+        action: "theme" as const,
       },
     ],
   },
@@ -77,6 +78,7 @@ const settingsSections = [
 export default function Settings() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
   const [toggleStates, setToggleStates] = useState<Record<string, boolean>>({
     "Push Notifications": true,
     "Two-Factor Authentication": false,
@@ -132,7 +134,8 @@ export default function Settings() {
           <div className="divide-y divide-border/50">
             {section.items.map((item, itemIndex) => {
               const Icon = item.icon;
-              const isEnabled = toggleStates[item.title] ?? item.enabled;
+              const isTheme = item.action === "theme";
+              const isEnabled = isTheme ? theme === "dark" : toggleStates[item.title] ?? item.enabled;
 
               return (
                 <motion.button
@@ -140,17 +143,26 @@ export default function Settings() {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: sectionIndex * 0.1 + itemIndex * 0.05 }}
-                  onClick={() => item.action === "toggle" && handleToggle(item.title)}
+                  onClick={() => {
+                    if (item.action === "toggle") handleToggle(item.title);
+                    if (item.action === "theme") toggleTheme();
+                  }}
                   className="w-full flex items-center gap-4 p-5 hover:bg-muted/50 transition-colors duration-200"
                 >
                   <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Icon className="text-primary" size={22} />
+                    {isTheme ? (
+                      theme === "dark" ? <Moon className="text-primary" size={22} /> : <Sun className="text-primary" size={22} />
+                    ) : (
+                      <Icon className="text-primary" size={22} />
+                    )}
                   </div>
                   <div className="flex-1 text-left">
                     <p className="font-semibold text-foreground">{item.title}</p>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {isTheme ? (theme === "dark" ? "Dark mode" : "Light mode") : item.description}
+                    </p>
                   </div>
-                  {item.action === "toggle" ? (
+                  {item.action === "toggle" || item.action === "theme" ? (
                     <div
                       className={`w-12 h-7 rounded-full p-0.5 transition-colors duration-300 ${
                         isEnabled ? "gradient-button" : "bg-muted"

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Home, LayoutDashboard, User, Mail, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/ict-girls-logo.png";
+import { useUser } from "@/hooks/use-user";
 
 const navItems = [
   { path: "/home", label: "Home", icon: Home },
@@ -15,8 +16,10 @@ const navItems = [
 export function TopNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { clearUser } = useUser();
 
   const handleLogout = () => {
+    clearUser();
     navigate("/login");
   };
 

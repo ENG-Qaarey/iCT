@@ -5,6 +5,8 @@ import { Mail, Lock } from "lucide-react";
 import { IctButton } from "@/components/ui/IctButton";
 import { IctInput } from "@/components/ui/IctInput";
 import logo from "@/assets/ict-girls-logo.png";
+import { useUser } from "@/hooks/use-user";
+import { loginUser } from "@/lib/auth";
 
 interface FormErrors {
   email?: string;
@@ -13,10 +15,12 @@ interface FormErrors {
 
 export default function Login() {
   const navigate = useNavigate();
+  const { user, setUser } = useUser();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -42,13 +46,21 @@ export default function Login() {
     
     if (!validateForm()) return;
 
+    setFormError("");
     setIsLoading(true);
     
-    // Simulate login API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    setIsLoading(false);
-    navigate("/home");
+    try {
+      const account = await loginUser(email, password);
+      const normalizedEmail = account.email.trim();
+      const fallbackName = account.name?.trim() || normalizedEmail.split("@")[0] || "Explorer";
+      setUser({ name: fallbackName, email: normalizedEmail, avatar: account.avatar });
+      navigate("/home");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to log in.";
+      setFormError(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -90,6 +102,14 @@ export default function Login() {
           transition={{ delay: 0.3, duration: 0.5 }}
           className="bg-card/80 backdrop-blur-lg rounded-3xl shadow-card border border-border/50 p-8"
         >
+          {formError && (
+            <div
+              role="alert"
+              className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-destructive"
+            >
+              {formError}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">

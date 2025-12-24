@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { LayoutDashboard, User, Settings, Sparkles, TrendingUp, Users } from "lucide-react";
 import { IctAvatar } from "@/components/ui/IctAvatar";
 import { FeatureCard } from "@/components/FeatureCard";
+import { useUser } from "@/hooks/use-user";
 
 const features = [
   {
@@ -33,7 +34,8 @@ const stats = [
 
 export default function Home() {
   const navigate = useNavigate();
-  const userName = "Sarah"; // This would come from auth context in a real app
+  const { user } = useUser();
+  const userName = user?.name?.trim() || "Explorer";
 
   return (
     <div className="space-y-8">
@@ -48,7 +50,7 @@ export default function Home() {
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-primary-foreground/10 blur-3xl -translate-y-1/2 translate-x-1/2" />
         
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-          <IctAvatar size="xl" editable onEdit={() => console.log("Edit avatar")} />
+          <IctAvatar size="xl" src={user?.avatar} />
           
           <div className="text-center md:text-left">
             <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
